@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import BattleArena from "@/components/BattleArena";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
           Two anonymous AI models answer your prompt. Pick the better response,
           then reveal who was behind it.
         </p>
+        <BattleArena />
       </main>
     </div>
   );
