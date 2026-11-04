@@ -1,5 +1,8 @@
 import type { ArenaModel } from "@/lib/models";
 
+const SYSTEM_PROMPT =
+  "Answer in at most 3 short sentences. Plain text only: no markdown, no headings, no tables, no lists, no bold.";
+
 export async function ask(model: ArenaModel, prompt: string): Promise<string> {
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -9,8 +12,13 @@ export async function ask(model: ArenaModel, prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: model.id,
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 500,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
+      // Reasoning tokens count toward the limit, so keep some headroom
+      max_tokens: 800,
+      reasoning_effort: "low",
     }),
   });
 
