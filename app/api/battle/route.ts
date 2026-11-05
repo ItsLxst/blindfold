@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pickTwo } from "@/lib/models";
 import { ask, RateLimitError } from "@/lib/llm";
+import { pool } from "@/lib/db";
 
 export async function POST(req: Request) {
   const { prompt } = await req.json();
@@ -15,8 +16,28 @@ export async function POST(req: Request) {
       ask(a, prompt),
       ask(b, prompt),
     ]);
-    // Model names are returned for now; they get hidden behind a matchId once the DB is in
-    return NextResponse.json({ responseA, responseB, modelA: a.name, modelB: b.name });
+
+    for (const m of [a, b]) {
+      await pool.query(
+        "insert into models (id, name) values ($1, $2) on conflict (id) do update set name = excluded.name",
+        [m.id, m.name]
+      );
+    }
+
+    const { rows } = await pool.query(
+      `insert into matches (prompt, model_a, model_b, response_a, response_b)
+       values ($1, $2, $3, $4, $5) returning id`,
+      [prompt, a.id, b.id, responseA, responseB]
+    );
+
+    // Model names are still returned for now; they get removed once voting uses the API
+    return NextResponse.json({
+      matchId: rows[0].id,
+      responseA,
+      responseB,
+      modelA: a.name,
+      modelB: b.name,
+    });
   } catch (e) {
     if (e instanceof RateLimitError) {
       return NextResponse.json({ error: "Free limit reached" }, { status: 429 });
