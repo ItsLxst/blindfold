@@ -4,9 +4,17 @@ type Props = {
   onVote?: () => void;
   result?: "picked" | "not-picked";
   revealedName?: string;
+  revealedElo?: number;
 };
 
-export default function ModelCard({ label, text, onVote, result, revealedName }: Props) {
+export default function ModelCard({
+  label,
+  text,
+  onVote,
+  result,
+  revealedName,
+  revealedElo,
+}: Props) {
   const picked = result === "picked";
 
   return (
@@ -33,7 +41,10 @@ export default function ModelCard({ label, text, onVote, result, revealedName }:
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-400">
             Revealed model
           </p>
-          <p className="mt-1 text-lg font-semibold">{revealedName}</p>
+          <div className="mt-1 flex items-baseline justify-between gap-4">
+            <p className="text-lg font-semibold">{revealedName}</p>
+            <p className="text-sm text-neutral-500">{revealedElo} ELO</p>
+          </div>
         </div>
       ) : (
         <button

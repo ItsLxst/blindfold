@@ -4,25 +4,28 @@ import { useState } from "react";
 import PromptBox from "@/components/PromptBox";
 import ModelCard from "@/components/ModelCard";
 
-type Battle = {
-  responseA: string;
-  responseB: string;
-  modelA: string;
-  modelB: string;
-};
-type Vote = "A" | "B";
+type Battle = { matchId: string; responseA: string; responseB: string };
+type Side = "A" | "B";
+type Reveal = { modelA: string; modelB: string; eloA: number; eloB: number };
 
 export default function BattleArena() {
   const [loading, setLoading] = useState(false);
+  const [voting, setVoting] = useState(false);
   const [error, setError] = useState("");
   const [battle, setBattle] = useState<Battle | null>(null);
-  const [vote, setVote] = useState<Vote | null>(null);
+  const [vote, setVote] = useState<Side | null>(null);
+  const [reveal, setReveal] = useState<Reveal | null>(null);
+
+  function reset() {
+    setBattle(null);
+    setVote(null);
+    setReveal(null);
+  }
 
   async function startBattle(prompt: string) {
     setLoading(true);
     setError("");
-    setBattle(null);
-    setVote(null);
+    reset();
     try {
       const res = await fetch("/api/battle", {
         method: "POST",
@@ -38,12 +41,27 @@ export default function BattleArena() {
     }
   }
 
-  function playAgain() {
-    setBattle(null);
-    setVote(null);
+  async function castVote(side: Side) {
+    if (!battle || voting) return;
+    setVoting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId: battle.matchId, winner: side }),
+      });
+      if (!res.ok) throw new Error("Vote failed");
+      setReveal(await res.json());
+      setVote(side);
+    } catch {
+      setError("Could not save your vote. Try again.");
+    } finally {
+      setVoting(false);
+    }
   }
 
-  function resultFor(side: Vote) {
+  function resultFor(side: Side) {
     if (!vote) return undefined;
     return vote === side ? "picked" : "not-picked";
   }
@@ -59,26 +77,28 @@ export default function BattleArena() {
             <ModelCard
               label="Model A"
               text={battle.responseA}
-              onVote={() => setVote("A")}
+              onVote={() => castVote("A")}
               result={resultFor("A")}
-              revealedName={battle.modelA}
+              revealedName={reveal?.modelA}
+              revealedElo={reveal?.eloA}
             />
             <ModelCard
               label="Model B"
               text={battle.responseB}
-              onVote={() => setVote("B")}
+              onVote={() => castVote("B")}
               result={resultFor("B")}
-              revealedName={battle.modelB}
+              revealedName={reveal?.modelB}
+              revealedElo={reveal?.eloB}
             />
           </div>
 
-          {vote && (
+          {vote && reveal && (
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-violet-100 px-6 py-4 text-violet-900">
               <p>
                 <span className="font-semibold">Vote counted.</span> You preferred{" "}
-                {vote === "A" ? battle.modelA : battle.modelB}.
+                {vote === "A" ? reveal.modelA : reveal.modelB}.
               </p>
-              <button onClick={playAgain} className="font-semibold underline">
+              <button onClick={reset} className="font-semibold underline">
                 Play again
               </button>
             </div>

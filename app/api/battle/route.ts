@@ -30,14 +30,7 @@ export async function POST(req: Request) {
       [prompt, a.id, b.id, responseA, responseB]
     );
 
-    // Model names are still returned for now; they get removed once voting uses the API
-    return NextResponse.json({
-      matchId: rows[0].id,
-      responseA,
-      responseB,
-      modelA: a.name,
-      modelB: b.name,
-    });
+    return NextResponse.json({ matchId: rows[0].id, responseA, responseB });
   } catch (e) {
     if (e instanceof RateLimitError) {
       return NextResponse.json({ error: "Free limit reached" }, { status: 429 });
