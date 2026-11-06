@@ -2,6 +2,8 @@
 
 Blind test LLMs. Vote, then see who won.
 
+**Live demo:** https://blindfold-two.vercel.app
+
 ![Blindfold screenshot](docs/screenshot.png)
 
 Blindfold is a blind-test arena for LLMs. You send a prompt, two anonymous models answer it, you vote for the better response, and only then are the models revealed. Every vote updates an ELO leaderboard, so over time you can see which model people actually prefer when brand names are hidden.
